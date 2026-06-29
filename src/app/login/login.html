@@ -1,0 +1,11 @@
+<h3 style="display: flex;
+    justify-content: center;">Login</h3>
+<form class="loginform">
+    <input type="text" placeholder="Username" [formControl]="name">
+    <br>
+    <br>
+    <input type="text" placeholder="password" [formControl]="password">
+    <br>
+    <br>
+    <button (click)="submit()" type="button">Login</button>
+</form>

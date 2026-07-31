@@ -1,0 +1,72 @@
+name: Build and Deploy .NET and Angular App
+
+on:
+  push:
+    branches: [ "main" ] # Triggers the pipeline every time you push to main
+
+jobs:
+  # ==========================================
+  # JOB 1: BUILD AND DEPLOY .NET BACKEND
+  # ==========================================
+  backend-ci-cd:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x' # Match your local .NET version
+
+    - name: Restore Dependencies
+      run: dotnet restore ./BackendProject.sln
+
+    - name: Build Project
+      run: dotnet build ./BackendProject.sln --configuration Release --no-restore
+
+    - name: Run Backend Tests
+      run: dotnet test ./BackendProject.sln --no-build --verbosity normal
+
+    - name: Publish Artifacts
+      run: dotnet publish ./BackendProject.sln --configuration Release --output ./publish-backend
+
+    - name: Deploy to Azure App Service
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: 'your-azure-app-service-name' # Replace with your actual Azure App Service name
+        publish-profile: ${{ secrets::AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ./publish-backend
+
+  # ==========================================
+  # JOB 2: BUILD AND DEPLOY ANGULAR FRONTEND
+  # ==========================================
+  frontend-ci-cd:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20' # Match your local Node.js version
+
+    - name: Install Dependencies
+      run: |
+        cd frontend-folder # Change to your actual Angular folder name
+        npm ci
+
+    - name: Build Angular Application
+      run: |
+        cd frontend-folder
+        npm run build -- --configuration=production
+
+    - name: Deploy to Azure Static Web Apps
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        action: "upload"
+        app_location: "frontend-folder/dist/your-angular-project-name" # Path to your compiled index.html file
+        output_location: "" # Leave empty as Angular build already creates the production folder
